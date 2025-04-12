@@ -7,24 +7,24 @@
     <h1>Welcome to FileShare</h1>
 </div>
 
-<div class="row">
-    <div class="col">
-        <div class="card">
+<div class="row" style="display: flex; flex-wrap: wrap;">
+    <div class="col" style="flex: 1 1 50%; max-width: 50%;">
+        <div class="card" style="min-height: 320px; display: flex; flex-direction: column; height: 100%;">
             <div class="card-icon">
                 <i class="fas fa-download"></i>
             </div>
             <h2 class="card-title">Download Files</h2>
-            <p>Browse and download files from our secure file sharing system. All files are integrity-checked to ensure they arrive safely.</p>
+            <p style="flex-grow: 1; margin-bottom: 1.5rem;">Browse and download files from our secure file sharing system. All files are integrity-checked to ensure they arrive safely.</p>
             <a href="/files" class="btn btn-secondary">Browse Files</a>
         </div>
     </div>
-    <div class="col">
-        <div class="card">
+    <div class="col" style="flex: 1 1 50%; max-width: 50%;">
+        <div class="card" style="min-height: 320px; display: flex; flex-direction: column; height: 100%;">
             <div class="card-icon">
                 <i class="fas fa-upload"></i>
             </div>
             <h2 class="card-title">Upload Files</h2>
-            <p>Share your files with others by uploading them to our system. Files are automatically versioned to prevent overwrites.</p>
+            <p style="flex-grow: 1; margin-bottom: 1.5rem;">Share your files with others by uploading them to our system. Files are automatically versioned to prevent overwrites.</p>
             <a href="/upload" class="btn btn-primary">Upload Files</a>
         </div>
     </div>
