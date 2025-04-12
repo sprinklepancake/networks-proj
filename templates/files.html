@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}FileShare - Files{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Available Files</h1>
+</div>
+
+<div class="card">
+    <div class="table-container">
+        {% if files %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Size</th>
+                        <th>Last Modified</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                        <tr>
+                            <td>{{ file.name }}</td>
+                            <td>{{ file.size_formatted }}</td>
+                            <td>{{ file.modified }}</td>
+                            <td>
+                                <a href="/download/{{ file.name }}" class="btn btn-secondary" style="padding: 0.5rem 1rem;">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="text-align: center; padding: 2rem;">
+                <i class="fas fa-folder-open" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                <p>No files available yet. Upload some files to get started!</p>
+                <a href="/upload" class="btn btn-primary" style="margin-top: 1rem;">Upload Files</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if files %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2 class="card-title">File Info</h2>
+    <p>Click on a file row to see detailed information including integrity hash.</p>
+    <div id="file-details" style="display: none; margin-top: 1rem; padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+        <h3 id="detail-filename" style="margin-bottom: 0.5rem; color: var(--secondary-color);"></h3>
+        <p><strong>Size:</strong> <span id="detail-size"></span></p>
+        <p><strong>Last Modified:</strong> <span id="detail-modified"></span></p>
+        <p><strong>SHA-256 Hash:</strong> <span id="detail-hash" style="word-break: break-all; font-family: monospace;"></span></p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if files %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // File data from the server
+        const files = {{ files|tojson }};
+        
+        // Add click events to table rows
+        const tableRows = document.querySelectorAll('tbody tr');
+        tableRows.forEach((row, index) => {
+            row.style.cursor = 'pointer';
+            row.addEventListener('click', function() {
+                // Highlight the selected row
+                tableRows.forEach(r => r.style.backgroundColor = '');
+                row.style.backgroundColor = '#e3f2fd';
+                
+                // Show file details
+                const file = files[index];
+                document.getElementById('detail-filename').textContent = file.name;
+                document.getElementById('detail-size').textContent = file.size_formatted;
+                document.getElementById('detail-modified').textContent = file.modified;
+                document.getElementById('detail-hash').textContent = file.hash;
+                document.getElementById('file-details').style.display = 'block';
+            });
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}FileShare - Upload{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Upload Files</h1>
+</div>
+
+<div class="card">
+    <h2 class="card-title">Select a file to upload</h2>
+    
+    <form action="/upload" method="POST" enctype="multipart/form-data" id="upload-form">
+        <div class="form-group">
+            <div class="file-input-container">
+                <label for="file" class="file-input-label">
+                    <i class="fas fa-file-upload"></i> Choose File
+                </label>
+                <input type="file" name="file" id="file" class="file-input" onchange="showFileName(this); validateFileSize(this);">
+            </div>
+            <div class="file-name" id="file-name"></div>
+            <div class="file-error" id="file-error" style="color: var(--error-color); margin-top: 0.5rem;"></div>
+        </div>
+        
+        <div class="progress-container" id="progress-container" style="display: none;">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary" id="upload-button">
+                <i class="fas fa-upload"></i> Upload File
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="margin-top: 1.5rem;">
+    <h2 class="card-title">Upload Information</h2>
+    <ul style="margin: 0.5rem 0 0.5rem 1.5rem;">
+        <li>Maximum file size: <strong>16 MB</strong></li>
+        <li>Allowed file types: <strong>.txt, .pdf, .doc, .docx, .xls, .xlsx, .png, .jpg, .jpeg, .gif, .zip, .rar</strong></li>
+        <li>Files with the same name will be automatically versioned (e.g., filename_v2.pdf)</li>
+        <li>All uploads are integrity-verified using SHA-256 hashing</li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables for tracking upload
+    let uploadInProgress = false;
+    
+    // Function to validate file size
+    function validateFileSize(input) {
+        const maxSize = 16 * 1024 * 1024; // 16 MB
+        const fileError = document.getElementById('file-error');
+        const uploadButton = document.getElementById('upload-button');
+        
+        if (input.files.length > 0) {
+            const fileSize = input.files[0].size;
+            
+            if (fileSize > maxSize) {
+                fileError.textContent = `File size exceeds the maximum allowed size (16 MB). This file is ${(fileSize / (1024 * 1024)).toFixed(2)} MB.`;
+                uploadButton.disabled = true;
+                return false;
+            } else {
+                fileError.textContent = '';
+                uploadButton.disabled = false;
+                return true;
+            }
+        }
+        return true;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadForm = document.getElementById('upload-form');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const uploadButton = document.getElementById('upload-button');
+        
+        // Handle form submission
+        uploadForm.addEventListener('submit', function(event) {
+            // Prevent default form submission if file validation fails
+            if (!validateFileSize(document.getElementById('file'))) {
+                event.preventDefault();
+                return;
+            }
+            
+            const fileInput = document.getElementById('file');
+            if (fileInput.files.length === 0) {
+                event.preventDefault();
+                document.getElementById('file-error').textContent = 'Please select a file to upload';
+                return;
+            }
+            
+            // Show progress bar and start simulated progress
+            progressContainer.style.display = 'block';
+            uploadButton.disabled = true;
+            uploadInProgress = true;
+            
+            // Simulate progress (since we can't track real upload progress with basic form submission)
+            let progress = 0;
+            const simulateProgress = setInterval(function() {
+                progress += Math.random() * 10;
+                if (progress > 90) {
+                    clearInterval(simulateProgress);
+                    progress = 90; // Cap at 90% until actual upload completes
+                }
+                progressBar.style.width = progress + '%';
+            }, 300);
+            
+        });
+        
+        // Add unload warning if upload is in progress
+        window.addEventListener('beforeunload', function(e) {
+            if (uploadInProgress) {
+                const message = 'Upload in progress. Are you sure you want to leave?';
+                e.returnValue = message;
+                return message;
+            }
+        });
+    });
+</script>
+{% endblock %}
