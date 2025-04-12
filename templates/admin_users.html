@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block title %}FileShare - Manage Users{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>User Management</h1>
+    <p class="subtitle">Manage all user accounts and permissions</p>
+</div>
+
+<div class="card">
+    {% if users %}
+    <div class="table-container">
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user[0] }}</td>
+                    <td>{{ user[1] }}</td>
+                    <td>
+                        <span class="role-badge {% if user[2] == 'admin' %}admin{% else %}user{% endif %}">
+                            {{ user[2] }}
+                        </span>
+                    </td>
+                    <td class="actions">
+                        {% if user[2] == 'user' %}
+                            <a href="/admin/promote/{{ user[0] }}" class="btn btn-promote" 
+                               onclick="return confirm('Promote {{ user[1] }} to admin?')">
+                                <i class="fas fa-user-plus"></i> Promote
+                            </a>
+                        {% else %}
+                            <a href="/admin/demote/{{ user[0] }}" class="btn btn-demote"
+                               onclick="return confirm('Demote {{ user[1] }} to regular user?')">
+                                <i class="fas fa-user-minus"></i> Demote
+                            </a>
+                        {% endif %}
+                        <a href="/admin/delete-user/{{ user[0] }}" class="btn btn-danger"
+                           onclick="return confirm('Permanently delete {{ user[1] }}? This cannot be undone.')">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-users-slash"></i>
+        <p>No users found in the system</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="admin-actions">
+    <a href="/admin/files" class="btn btn-secondary">
+        <i class="fas fa-file-alt"></i> Manage Files
+    </a>
+    <a href="/admin/logs" class="btn btn-secondary">
+        <i class="fas fa-scroll"></i> View Logs
+    </a>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .subtitle {
+        color: #666;
+        margin-top: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .user-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .user-table th, .user-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .user-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .user-table tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .role-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .role-badge.admin {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .role-badge.user {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+
+    .actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-promote {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-demote {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .admin-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .actions {
+            flex-direction: column;
+        }
+        
+        .user-table th, .user-table td {
+            padding: 8px 10px;
+        }
+    }
+</style>
+{% endblock %}

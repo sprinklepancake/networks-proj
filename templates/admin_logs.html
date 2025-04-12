@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}FileShare - Logs{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Server Logs</h1>
+</div>
+
+<div class="card">
+    <div class="table-container">
+        {% if logs %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Log File</th>
+                        <th>Last Modified</th>
+                        <th>Size</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                        <tr>
+                            <td>{{ log.name }}</td>
+                            <td>{{ log.modified }}</td>
+                            <td>{{ log.size }} bytes</td>
+                            <td>
+                                <a href="/admin/logs/view/{{ log.name }}" class="btn btn-secondary" style="padding: 0.5rem 1rem;">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="text-align: center; padding: 2rem;">
+                <i class="fas fa-file-alt" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                <p>No log files available.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
