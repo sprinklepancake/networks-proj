@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}FileShare - Home{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Welcome to FileShare</h1>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-icon">
+                <i class="fas fa-download"></i>
+            </div>
+            <h2 class="card-title">Download Files</h2>
+            <p>Browse and download files from our secure file sharing system. All files are integrity-checked to ensure they arrive safely.</p>
+            <a href="/files" class="btn btn-secondary">Browse Files</a>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card">
+            <div class="card-icon">
+                <i class="fas fa-upload"></i>
+            </div>
+            <h2 class="card-title">Upload Files</h2>
+            <p>Share your files with others by uploading them to our system. Files are automatically versioned to prevent overwrites.</p>
+            <a href="/upload" class="btn btn-primary">Upload Files</a>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <h2 class="card-title">About This Project</h2>
+    <p>This file sharing system was developed as part of the CSC 430 Computer Networks course. It features:</p>
+    <ul style="margin: 1rem 0 1rem 2rem;">
+        <li>Secure file uploads and downloads</li>
+        <li>File integrity verification using SHA-256 hashing</li>
+        <li>Automatic file versioning</li>
+        <li>Responsive web interface</li>
+        <li>Detailed logging of all operations</li>
+    </ul>
+    <p>The system is designed to demonstrate the principles of client-server architecture, network protocols, and secure file transfer.</p>
+</div>
+{% endblock %}
