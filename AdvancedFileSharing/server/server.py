@@ -8,7 +8,6 @@ PORT = 6600
 ADDR = (IP, PORT)
 SIZE = 1024
 SERVER_DATA_PATH = "server_data"
-EOF_MARKER = b"<<EOF>>"
 
 if not os.path.exists(SERVER_DATA_PATH):
     os.makedirs(SERVER_DATA_PATH)
@@ -37,6 +36,7 @@ def handle_client(connectionSock, addr):
                 file_name = parts[1]
                 file_size = int(parts[2])
 
+                # receive file
                 file_data = b""
                 received = 0
                 while received < file_size:
@@ -46,10 +46,13 @@ def handle_client(connectionSock, addr):
                     file_data += chunk
                     received += len(chunk)
 
+                # receive hash
                 file_hash = connectionSock.recv(64).decode()
+
                 print(f"[UPLOAD] Received {received} bytes for {file_name}")
                 print(f"[UPLOAD] Received hash: {file_hash}")
 
+                # check for file integrity 
                 if verifyIntegrity(file_data, file_hash):
                     filepath = os.path.join(SERVER_DATA_PATH, file_name)
                     with open(filepath, "wb") as f:
@@ -71,6 +74,7 @@ def handle_client(connectionSock, addr):
                 file_name = parts[1]
                 filepath = os.path.join(SERVER_DATA_PATH, file_name)
 
+                # send file size, file, and hash if file exists
                 if os.path.exists(filepath):
                     with open(filepath, "rb") as f:
                         file_data = f.read()
