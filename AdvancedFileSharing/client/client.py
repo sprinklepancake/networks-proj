@@ -10,10 +10,10 @@ def connect_to_server():
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((host, port))
-        print("✅ Connected to the server!")
+        print("Connected to the server!")
         return sock
     except Exception as e:
-        print(f"❌ Failed to connect: {e}")
+        print(f"Failed to connect: {e}")
         return None
 
 def calculate_hash(file_bytes):
@@ -25,7 +25,7 @@ def upload_file(sock):
     filename = input("Enter the path of the file to upload: ").strip()
 
     if not os.path.exists(filename):
-        print("❌ File not found.")
+        print("File not found.")
         return
 
     try:
@@ -48,12 +48,12 @@ def upload_file(sock):
         # Get response
         response = sock.recv(1024).decode()
         if response.startswith("Success>"):
-            print("✅ Upload complete and verified.")
+            print("Upload complete and verified.")
         else:
-            print("❌ Upload failed:", response)
+            print("Upload failed:", response)
 
     except Exception as e:
-        print(f"❌ Error during upload: {e}")
+        print(f"Error during upload: {e}")
 
 def download_file(sock):
     file_name = input("Enter the name of the file to download: ").strip()
@@ -67,7 +67,7 @@ def download_file(sock):
             print(size_msg)
             return
         elif not size_msg.startswith("SIZE>"):
-            print("❌ Unexpected response from server.")
+            print("Unexpected response from server.")
             return
 
         file_size = int(size_msg.split(">")[1])
@@ -88,12 +88,12 @@ def download_file(sock):
         if calculate_hash(file_data) == file_hash:
             with open(file_name, "wb") as f:
                 f.write(file_data)
-            print(f"✅ Downloaded and verified: {file_name}")
+            print(f"Downloaded and verified: {file_name}")
         else:
-            print("❌ File integrity check failed.")
+            print("File integrity check failed.")
 
     except Exception as e:
-        print("❌ Download failed:", e)
+        print("Download failed:", e)
 
 
 def list_files(sock):
@@ -101,11 +101,11 @@ def list_files(sock):
         sock.sendall("LIST".encode())
         data = sock.recv(4096).decode()
         if data.startswith("OK>"):
-            print("\n📂 Files on server:\n" + data.split(">", 1)[1])
+            print("\nFiles on server:\n" + data.split(">", 1)[1])
         else:
-            print("❌ Failed to list files.")
+            print("Failed to list files.")
     except Exception as e:
-        print("❌ Error listing files:", e)
+        print("Error listing files:", e)
 
 def show_menu():
     print("\nWhat would you like to do?")
@@ -131,10 +131,10 @@ def main():
             list_files(sock)
         elif choice == "4":
             sock.sendall("CLOSE".encode())
-            print("👋 Goodbye!")
+            print("Goodbye!")
             break
         else:
-            print("❌ Invalid choice. Please try again.")
+            print("Invalid choice. Please try again.")
 
     sock.close()
 
