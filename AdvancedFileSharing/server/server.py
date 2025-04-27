@@ -73,9 +73,23 @@ def handle_client(connectionSock, addr):
 
                 # check for file integrity 
                 if verifyIntegrity(file_data, file_hash):
+                    root, ext = os.path.splitext(file_name)
+                    file_name = f"{root}_v{1}{ext}"
                     filepath = os.path.join(SERVER_DATA_PATH, file_name)
-                    with open(filepath, "wb") as f:
-                        f.write(file_data)
+                    # check if the file already exists  
+                    if (os.path.isfile(filepath)):
+                        # for each version number, check if that version exists. if not, assign the version number to the new file
+                        for i in range(2, 1000):
+                            new_file = f"{root}_v{i}{ext}"
+                            filepath = os.path.join(SERVER_DATA_PATH, new_file)
+                            if not os.path.isfile(filepath):
+                                with open(filepath, "wb") as f:
+                                    f.write(file_data)
+                                break
+                    else: # file does not exist
+                        with open(filepath, "wb") as f:
+                            f.write(file_data)
+
                     connectionSock.send("Success>File uploaded.".encode())
                     logger.info("File was uploaded successfully.")
                 else:
@@ -94,20 +108,36 @@ def handle_client(connectionSock, addr):
 
             elif request == "DOWNLOAD":
                 file_name = parts[1]
+                root, ext = os.path.splitext(file_name)
+                file_name = f"{root}_v{1}{ext}"
                 filepath = os.path.join(SERVER_DATA_PATH, file_name)
 
-                # send file size, file, and hash if file exists
-                if os.path.exists(filepath):
+                # check if the file exists on the server
+                if (not os.path.exists(filepath)):
+                    connectionSock.send("Fail>File not found.".encode())
+                    logger.warning("File not found.")
+                else:
+                    # a version 1 exists, so now we check for the latest version
+                    i = 1
+                    while (os.path.exists(filepath)):
+                        i += 1
+                        file_name = f"{root}_v{i}{ext}"
+                        filepath = os.path.join(SERVER_DATA_PATH, file_name)
+                        
+                    i -= 1 # number of the latest version 
+                    file_name = f"{root}_v{i}{ext}"
+                    filepath = os.path.join(SERVER_DATA_PATH, file_name)
                     with open(filepath, "rb") as f:
                         file_data = f.read()
                     file_size = len(file_data)
+
+                    # sends file size, file, and its hash
                     connectionSock.sendall(f"SIZE>{file_size}".encode())
                     connectionSock.sendall(file_data)
                     connectionSock.sendall(calculateHash(file_data).encode())
                     logger.info("File and its hash was sent.")
-                else:
-                    connectionSock.send("Fail>File not found.".encode())
-                    logger.warning("File not found.")
+                
+                
 
 
             elif request == "CLOSE":
