@@ -67,8 +67,8 @@ def handle_client(connectionSock, addr):
                 # receive hash
                 file_hash = connectionSock.recv(64).decode()
 
-                logger.debug(f"[UPLOAD] Received {received} bytes for {file_name}")
-                logger.debug(f"[UPLOAD] Received hash: {file_hash}")
+                logger.debug(f"[UPLOAD] Received {received} bytes for {file_name} from {addr}")
+                logger.debug(f"[UPLOAD] Received hash: {file_hash} from {addr}")
 
                 # check for file integrity 
                 if verifyIntegrity(file_data, file_hash):
@@ -89,10 +89,10 @@ def handle_client(connectionSock, addr):
                         f.write(file_data)
 
                     connectionSock.send(f"Success>File uploaded successfully as {file_name}".encode())
-                    logger.info(f"File {file_name} uploaded successfully.")
+                    logger.info(f"File {file_name} uploaded successfully from {addr}.")
                 else:
                     connectionSock.send("Fail>File failed to transfer safely.".encode())
-                    logger.warning("File failed to transfer safely.")
+                    logger.warning(f"File {file_name} failed to transfer safely from {addr}.")
 
             elif request == "LIST":
                 files = os.listdir(SERVER_DATA_PATH)
@@ -102,7 +102,7 @@ def handle_client(connectionSock, addr):
                 else:
                     send_data += "\n".join(files)
                 connectionSock.send(send_data.encode())
-                logger.info("List of files was sent.")
+                logger.info(f"List of files was sent to {addr}.")
 
             elif request == "DOWNLOAD":
                 file_name = parts[1]
@@ -118,10 +118,10 @@ def handle_client(connectionSock, addr):
                     connectionSock.sendall(f"SIZE>{file_size}".encode())
                     connectionSock.sendall(file_data)
                     connectionSock.sendall(calculateHash(file_data).encode())
-                    logger.info(f"File {file_name} and its hash sent.")
+                    logger.info(f"File {file_name} and its hash sent to {addr}.")
                 else:
                     connectionSock.send("Fail>File not found.".encode())
-                    logger.warning(f"File {file_name} not found.")
+                    logger.warning(f"File {file_name}, required by {addr}, not found.")
 
             elif request == "CLOSE":
                 logger.info(f"[DISCONNECT] {addr} disconnected.")
