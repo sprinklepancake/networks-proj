@@ -1,138 +1,137 @@
-
-import os
 import socket
-import threading
+import os
 import hashlib
-import logging
 
-IP = socket.gethostbyname(socket.gethostname())
-PORT = 6600
-ADDR = (IP, PORT)
-SIZE = 1024
-SERVER_DATA_PATH = "server_data"
+CHUNK_SIZE = 1024
+CLIENT_DATA_PATH = "client_data"
 
-# Setup logging
-logger = logging.getLogger(__name__)
-console_handler = logging.StreamHandler()
-file_handler = logging.FileHandler("server.log", mode="a", encoding="utf-8")
-logger.addHandler(console_handler)
-logger.addHandler(file_handler)
-formatter = logging.Formatter("{asctime} - {levelname} - {message}", style="{", datefmt="%Y-%m-%d %H:%M:%S")
-console_handler.setFormatter(formatter)
-file_handler.setFormatter(formatter)
-logger.setLevel("DEBUG")
+if not os.path.exists(CLIENT_DATA_PATH):
+    os.makedirs(CLIENT_DATA_PATH)
 
-if not os.path.exists(SERVER_DATA_PATH):
-    os.makedirs(SERVER_DATA_PATH)
+def connect_to_server():
+    host = socket.gethostbyname(socket.gethostname())
+    port = 6600
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((host, port))
+        print("Connected to the server!")
+        return sock
+    except Exception as e:
+        print(f"Failed to connect: {e}")
+        return None
 
-def calculateHash(file_bytes):
+def calculate_hash(file_bytes):
     hasher = hashlib.sha256()
     hasher.update(file_bytes)
     return hasher.hexdigest()
 
-def verifyIntegrity(file_bytes, received_hash):
-    return calculateHash(file_bytes) == received_hash
+def upload_file(sock):
+    filename = input("Enter the path of the file to upload: ").strip()
 
-def handle_client(connectionSock, addr):
-    logger.info(f"[NEW CONNECTION] {addr} connected.")
+    if not os.path.exists(filename):
+        print("File not found.")
+        return
 
-    while True:
-        try:
-            data = connectionSock.recv(SIZE).decode()
-            if not data:
+    try:
+        with open(filename, "rb") as f:
+            file_data = f.read()
+
+        file_size = len(file_data)
+        file_name_only = os.path.basename(filename)
+        file_hash = calculate_hash(file_data)
+
+        sock.sendall(f"UPLOAD>{file_name_only}>{file_size}".encode())
+        sock.sendall(file_data)
+        sock.sendall(file_hash.encode())
+
+        response = sock.recv(1024).decode()
+        if response.startswith("Success>"):
+            print(response.split(">", 1)[1])
+        else:
+            print("Upload failed:", response)
+
+    except Exception as e:
+        print(f"Error during upload: {e}")
+
+def download_file(sock):
+    file_name = input("Enter the name of the file to download: ").strip()
+    try:
+        request = f"DOWNLOAD>{file_name}"
+        sock.sendall(request.encode())
+
+        size_msg = sock.recv(1024).decode()
+        if size_msg.startswith("Fail>"):
+            print(size_msg.split(">", 1)[1])
+            return
+        elif not size_msg.startswith("SIZE>"):
+            print("Unexpected response from server.")
+            return
+
+        file_size = int(size_msg.split(">")[1])
+
+        file_data = b""
+        received = 0
+        while received < file_size:
+            chunk = sock.recv(min(CHUNK_SIZE, file_size - received))
+            if not chunk:
                 break
+            file_data += chunk
+            received += len(chunk)
 
-            parts = data.split(">")
-            request = parts[0]
+        file_hash = sock.recv(64).decode()
 
-            if request == "UPLOAD":
-                file_name = parts[1]
-                file_size = int(parts[2])
+        if calculate_hash(file_data) == file_hash:
+            filepath = os.path.join(CLIENT_DATA_PATH, file_name)
+            with open(filepath, "wb") as f:
+                f.write(file_data)
+            print(f"Downloaded and verified: {file_name}")
+        else:
+            print("File integrity check failed.")
 
-                # Receive file
-                file_data = b""
-                received = 0
-                while received < file_size:
-                    chunk = connectionSock.recv(min(SIZE, file_size - received))
-                    if not chunk:
-                        break
-                    file_data += chunk
-                    received += len(chunk)
+    except Exception as e:
+        print("Download failed:", e)
 
-                # Receive hash
-                file_hash = connectionSock.recv(64).decode()
+def list_files(sock):
+    try:
+        sock.sendall("LIST".encode())
+        data = sock.recv(4096).decode()
+        if data.startswith("OK>"):
+            print("\nFiles on server:\n" + data.split(">", 1)[1])
+        else:
+            print("Failed to list files.")
+    except Exception as e:
+        print("Error listing files:", e)
 
-                logger.debug(f"[UPLOAD] Received {received} bytes for {file_name}")
-                logger.debug(f"[UPLOAD] Received hash: {file_hash}")
-
-                # Check file integrity
-                if verifyIntegrity(file_data, file_hash):
-                    filepath = os.path.join(SERVER_DATA_PATH, file_name)
-
-                    # Handle duplicate file names
-                    if os.path.exists(filepath):
-                        base, ext = os.path.splitext(file_name)
-                        version = 2
-                        while os.path.exists(os.path.join(SERVER_DATA_PATH, f"{base}_v{version}{ext}")):
-                            version += 1
-                        file_name = f"{base}_v{version}{ext}"
-                        filepath = os.path.join(SERVER_DATA_PATH, file_name)
-
-                    with open(filepath, "wb") as f:
-                        f.write(file_data)
-
-                    connectionSock.send(f"Success>File uploaded successfully as {file_name}".encode())
-                    logger.info(f"File {file_name} uploaded successfully.")
-                else:
-                    connectionSock.send("Fail>File failed to transfer safely.".encode())
-                    logger.warning("File failed integrity check.")
-
-            elif request == "LIST":
-                files = os.listdir(SERVER_DATA_PATH)
-                send_data = "OK>"
-                if not files:
-                    send_data += "There are no files"
-                else:
-                    send_data += "\n".join(files)
-                connectionSock.send(send_data.encode())
-                logger.info("List of files was sent.")
-
-            elif request == "DOWNLOAD":
-                file_name = parts[1]
-                filepath = os.path.join(SERVER_DATA_PATH, file_name)
-
-                if os.path.exists(filepath):
-                    with open(filepath, "rb") as f:
-                        file_data = f.read()
-                    file_size = len(file_data)
-                    connectionSock.sendall(f"SIZE>{file_size}".encode())
-                    connectionSock.sendall(file_data)
-                    connectionSock.sendall(calculateHash(file_data).encode())
-                    logger.info(f"File {file_name} and its hash sent.")
-                else:
-                    connectionSock.send("Fail>File not found.".encode())
-                    logger.warning(f"File {file_name} not found.")
-
-            elif request == "CLOSE":
-                logger.info(f"[DISCONNECT] {addr} disconnected.")
-                break
-
-        except Exception as e:
-            logger.error(f"Error with client {addr}: {e}")
-            break
-
-    connectionSock.close()
+def show_menu():
+    print("\nWhat would you like to do?")
+    print("1. Upload File")
+    print("2. Download File")
+    print("3. List Available Files")
+    print("4. Exit")
 
 def main():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(ADDR)
-    server.listen()
-    logger.info(f"[STARTED] Server running on {IP}:{PORT}")
+    sock = connect_to_server()
+    if not sock:
+        return
 
     while True:
-        client_socket, addr = server.accept()
-        thread = threading.Thread(target=handle_client, args=(client_socket, addr))
-        thread.start()
+        show_menu()
+        choice = input("Enter your choice: ").strip()
+
+        if choice == "1":
+            upload_file(sock)
+        elif choice == "2":
+            download_file(sock)
+        elif choice == "3":
+            list_files(sock)
+        elif choice == "4":
+            sock.sendall("CLOSE".encode())
+            print("Goodbye!")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+    sock.close()
 
 if __name__ == "__main__":
     main()
