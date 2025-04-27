@@ -3,9 +3,13 @@ import os
 import hashlib
 
 CHUNK_SIZE = 1024
+CLIENT_DATA_PATH = "client_data"
+
+if not os.path.exists(CLIENT_DATA_PATH):
+    os.makedirs(CLIENT_DATA_PATH)
 
 def connect_to_server():
-    host = '192.168.1.119'  # Update this if needed
+    host = socket.gethostbyname(socket.gethostname())
     port = 6600
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -86,7 +90,8 @@ def download_file(sock):
         file_hash = sock.recv(64).decode()
 
         if calculate_hash(file_data) == file_hash:
-            with open(file_name, "wb") as f:
+            filepath = os.path.join(CLIENT_DATA_PATH, file_name)
+            with open(filepath, "wb") as f:
                 f.write(file_data)
             print(f"Downloaded and verified: {file_name}")
         else:
