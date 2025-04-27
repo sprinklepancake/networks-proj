@@ -25,9 +25,11 @@ console_handler.setFormatter(formatter)
 file_handler.setFormatter(formatter)
 logger.setLevel("DEBUG")
 
+# create server_data folder if it does not exist for storing files
 if not os.path.exists(SERVER_DATA_PATH):
     os.makedirs(SERVER_DATA_PATH)
 
+# functions for file integrity
 def calculateHash(file_bytes):
     hasher = hashlib.sha256()
     hasher.update(file_bytes)
@@ -72,15 +74,17 @@ def handle_client(connectionSock, addr):
                 if verifyIntegrity(file_data, file_hash):
                     filepath = os.path.join(SERVER_DATA_PATH, file_name)
 
-                    # 🔥 Check for duplicates and version automatically 🔥
+                    # check if file exists on the server
                     if os.path.exists(filepath):
                         base, ext = os.path.splitext(file_name)
                         version = 2
+                        # find the number for the latest version
                         while os.path.exists(os.path.join(SERVER_DATA_PATH, f"{base}_v{version}{ext}")):
                             version += 1
                         file_name = f"{base}_v{version}{ext}"
                         filepath = os.path.join(SERVER_DATA_PATH, file_name)
 
+                    # write the file to the server_data folder
                     with open(filepath, "wb") as f:
                         f.write(file_data)
 
@@ -104,10 +108,13 @@ def handle_client(connectionSock, addr):
                 file_name = parts[1]
                 filepath = os.path.join(SERVER_DATA_PATH, file_name)
 
+                # check if the file exists on the server
                 if os.path.exists(filepath):
                     with open(filepath, "rb") as f:
                         file_data = f.read()
                     file_size = len(file_data)
+
+                    # sends the file
                     connectionSock.sendall(f"SIZE>{file_size}".encode())
                     connectionSock.sendall(file_data)
                     connectionSock.sendall(calculateHash(file_data).encode())

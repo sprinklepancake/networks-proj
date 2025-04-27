@@ -31,11 +31,9 @@ def connect_to_server():
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((host, port))
-        print("Connected to the server!")
         logger.info("Connected to the server.")
         return sock
     except Exception as e:
-        print(f"Failed to connect: {e}")
         logger.error(f"Failed to connect to server: {e}")
         return None
 
@@ -48,7 +46,6 @@ def upload_file(sock):
     filename = input("Enter the path of the file to upload: ").strip()
 
     if not os.path.exists(filename):
-        print("File not found.")
         logger.error(f"File not found for upload: {filename}")
         return
 
@@ -66,14 +63,11 @@ def upload_file(sock):
 
         response = sock.recv(1024).decode()
         if response.startswith("Success>"):
-            print(response.split(">", 1)[1])
             logger.info(f"Uploaded file: {file_name_only}")
         else:
-            print("Upload failed:", response)
             logger.error(f"Upload failed for file: {file_name_only} - {response}")
 
     except Exception as e:
-        print(f"Error during upload: {e}")
         logger.error(f"Exception during upload of {filename}: {e}")
 
 def download_file(sock):
@@ -84,11 +78,9 @@ def download_file(sock):
 
         size_msg = sock.recv(1024).decode()
         if size_msg.startswith("Fail>"):
-            print(size_msg.split(">", 1)[1])
             logger.error(f"Download failed for file: {file_name} - File not found on server.")
             return
         elif not size_msg.startswith("SIZE>"):
-            print("Unexpected response from server.")
             logger.error(f"Unexpected response from server when downloading {file_name}.")
             return
 
@@ -109,14 +101,11 @@ def download_file(sock):
             filepath = os.path.join(CLIENT_DATA_PATH, file_name)
             with open(filepath, "wb") as f:
                 f.write(file_data)
-            print(f"Downloaded and verified: {file_name}")
             logger.info(f"Downloaded and verified file: {file_name}")
         else:
-            print("File integrity check failed.")
             logger.error(f"Integrity check failed for file: {file_name}")
 
     except Exception as e:
-        print("Download failed:", e)
         logger.error(f"Exception during download of {file_name}: {e}")
 
 def list_files(sock):
@@ -127,10 +116,8 @@ def list_files(sock):
             print("\nFiles on server:\n" + data.split(">", 1)[1])
             logger.info("Listed available files.")
         else:
-            print("Failed to list files.")
             logger.error("Failed to list files.")
     except Exception as e:
-        print("Error listing files:", e)
         logger.error(f"Exception while listing files: {e}")
 
 def show_menu():
